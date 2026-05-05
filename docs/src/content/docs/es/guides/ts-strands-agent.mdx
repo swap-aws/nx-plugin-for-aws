@@ -235,6 +235,14 @@ El generador configura un target llamado `<your-agent-name>-serve`, que inicia t
 
 Este comando usa `tsx --watch` para reiniciar automáticamente el servidor cuando cambian los archivos. El agente estará disponible en `http://localhost:8081` (o el puerto asignado si tienes múltiples agentes).
 
+### Chatear con tu Agente
+
+El generador configura un target Nx `<your-agent-name>-chat` que depende de `<your-agent-name>-serve-local`. Ejecutarlo inicia el agente localmente y te lleva a un chat interactivo de terminal:
+
+<NxCommands commands={['run your-project:agent-chat']} />
+
+Para agentes **HTTP** (tRPC sobre WebSocket), el generador también emite un pequeño `scripts/<your-agent-name>/chat.ts` que envuelve el `<Agent>Client.local({ url })` generado para que puedas personalizarlo a medida que evoluciona la forma de entrada del agente.
+
 <OptionFilter when={{ computeType: 'BedrockAgentCoreRuntime' }} description="Bedrock AgentCore Runtime deployment details">
 ## Desplegar tu Strands Agent en Bedrock AgentCore Runtime
 

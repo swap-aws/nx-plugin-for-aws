@@ -235,6 +235,14 @@ Strands エージェントの作成に関する詳細なガイドについては
 
 このコマンドは `tsx --watch` を使用して、ファイルが変更されたときにサーバーを自動的に再起動します。エージェントは `http://localhost:8081` (または複数のエージェントがある場合は割り当てられたポート) で利用可能になります。
 
+### エージェントとチャット
+
+ジェネレーターは、`<your-agent-name>-serve-local` に依存する `<your-agent-name>-chat` Nx ターゲットを設定します。実行すると、エージェントがローカルで起動し、インタラクティブなターミナルチャットに入ります:
+
+<NxCommands commands={['run your-project:agent-chat']} />
+
+**HTTP** (tRPC over WebSocket) エージェントの場合、ジェネレーターは、生成された `<Agent>Client.local({ url })` をラップする小さな `scripts/<your-agent-name>/chat.ts` も生成するため、エージェントの入力形状の進化に合わせてカスタマイズできます。
+
 <OptionFilter when={{ computeType: 'BedrockAgentCoreRuntime' }} description="Bedrock AgentCore Runtime deployment details">
 ## Strands Agent を Bedrock AgentCore Runtime にデプロイ
 

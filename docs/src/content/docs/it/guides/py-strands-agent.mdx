@@ -345,6 +345,21 @@ Il generatore configura un target chiamato `<your-agent-name>-serve`, che avvia 
 
 Questo comando usa `uv run` per eseguire il tuo Strands Agent utilizzando il [Bedrock AgentCore Python SDK](https://github.com/aws/bedrock-agentcore-sdk-python).
 
+### Chattare con il tuo Agente
+
+Il generatore configura un target Nx `<your-agent-name>-chat` che dipende da `<your-agent-name>-serve-local`. Eseguendolo avvia l'agente localmente e ti porta in una chat interattiva da terminale:
+
+<NxCommands commands={['run your-project:agent-chat']} />
+
+Per gli agenti **HTTP**, il generatore emette anche:
+
+- `scripts/<your-agent-name>_openapi.py` — un piccolo script che esporta la specifica OpenAPI dell'agente
+- Un target Nx `<your-agent-name>-openapi` che lo esegue
+- Un target Nx `<your-agent-name>-generate-client` che produce un client TypeScript type-safe sotto `scripts/<your-agent-name>/generated/`
+- `scripts/<your-agent-name>/chat.ts` — un wrapper sottile attorno al client generato
+
+Quando personalizzi la forma di input dell'agente (ad esempio aggiungi nuovi campi a `InvokeInput`), aggiorna `chat.ts` per passare i nuovi campi quando invochi l'agente e il resto funziona automaticamente.
+
 <OptionFilter when={{ computeType: 'BedrockAgentCoreRuntime' }} description="Bedrock AgentCore Runtime deployment details">
 ## Distribuire il tuo Strands Agent su Bedrock AgentCore Runtime
 

@@ -235,6 +235,14 @@ Generator cấu hình một target có tên `<your-agent-name>-serve`, khởi đ
 
 Lệnh này sử dụng `tsx --watch` để tự động khởi động lại server khi các file thay đổi. Agent sẽ có sẵn tại `http://localhost:8081` (hoặc cổng được gán nếu bạn có nhiều agent).
 
+### Chat với Agent của bạn
+
+Generator cấu hình một target Nx `<your-agent-name>-chat` phụ thuộc vào `<your-agent-name>-serve-local`. Khi chạy nó sẽ khởi động agent locally và đưa bạn vào một terminal chat tương tác:
+
+<NxCommands commands={['run your-project:agent-chat']} />
+
+Đối với các agent **HTTP** (tRPC qua WebSocket), generator cũng tạo ra một file `scripts/<your-agent-name>/chat.ts` nhỏ gọn bao bọc `<Agent>Client.local({ url })` được tạo ra để bạn có thể tùy chỉnh nó khi phát triển hình dạng đầu vào của agent.
+
 <OptionFilter when={{ computeType: 'BedrockAgentCoreRuntime' }} description="Bedrock AgentCore Runtime deployment details">
 ## Triển khai Strands Agent của bạn lên Bedrock AgentCore Runtime
 

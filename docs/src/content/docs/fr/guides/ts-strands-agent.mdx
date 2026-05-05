@@ -235,6 +235,14 @@ Le générateur configure une cible nommée `<your-agent-name>-serve`, qui déma
 
 Cette commande utilise `tsx --watch` pour redémarrer automatiquement le serveur lorsque les fichiers changent. L'agent sera disponible à `http://localhost:8081` (ou le port attribué si vous avez plusieurs agents).
 
+### Discuter avec votre Agent
+
+Le générateur configure une cible Nx `<your-agent-name>-chat` qui dépend de `<your-agent-name>-serve-local`. Son exécution démarre l'agent localement et vous place dans un chat terminal interactif :
+
+<NxCommands commands={['run your-project:agent-chat']} />
+
+Pour les agents **HTTP** (tRPC sur WebSocket), le générateur émet également un petit fichier `scripts/<your-agent-name>/chat.ts` qui encapsule le `<Agent>Client.local({ url })` généré afin que vous puissiez le personnaliser au fur et à mesure que vous faites évoluer la forme d'entrée de l'agent.
+
 <OptionFilter when={{ computeType: 'BedrockAgentCoreRuntime' }} description="Bedrock AgentCore Runtime deployment details">
 ## Déploiement de votre Strands Agent sur Bedrock AgentCore Runtime
 

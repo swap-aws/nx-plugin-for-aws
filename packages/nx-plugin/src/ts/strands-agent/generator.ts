@@ -192,6 +192,7 @@ export const tsStrandsAgentGenerator = async (
     withVersions([
       'tsx',
       '@types/node',
+      'agent-chat-cli',
       ...(protocol === 'A2A'
         ? (['@types/express'] as const)
         : (['@types/ws', '@types/cors'] as const)),
@@ -202,6 +203,39 @@ export const tsStrandsAgentGenerator = async (
   // HTTP agents use port 8081+ to avoid conflict with VS Code server on 8080.
   const localDevPortStart = protocol === 'A2A' ? 9000 : 8081;
   const localDevPort = assignPort(tree, project, localDevPortStart);
+
+  // HTTP chat needs a tiny generated script to wrap the project's tRPC
+  // WebSocket client in a `ChatAdapter`. A2A speaks the standard A2A
+  // protocol, so we can run `agent-chat-cli` directly as a binary.
+  if (protocol === 'HTTP') {
+    const scriptsDir = joinPathFragments(
+      project.root,
+      'scripts',
+      agentTargetPrefix,
+    );
+    const relativeAgentImport = `../../${targetSourceDirRelativeToProjectRoot}`;
+    generateFiles(
+      tree,
+      joinPathFragments(__dirname, 'scripts', 'http'),
+      scriptsDir,
+      {
+        agentNameClassName,
+        agentTargetPrefix,
+        localDevPort,
+        relativeAgentImport,
+      },
+      { overwriteStrategy: OverwriteStrategy.KeepExisting },
+    );
+  }
+
+  const chatUrl =
+    protocol === 'HTTP'
+      ? `ws://localhost:${localDevPort}/ws`
+      : `http://localhost:${localDevPort}`;
+  const chatCommand =
+    protocol === 'HTTP'
+      ? `tsx ./scripts/${agentTargetPrefix}/chat.ts`
+      : `agent-chat-cli a2a ${chatUrl}`;
 
   updateProjectConfiguration(tree, project.name, {
     ...project,
@@ -229,6 +263,17 @@ export const tsStrandsAgentGenerator = async (
           },
         },
         continuous: true,
+      },
+      [`${agentTargetPrefix}-chat`]: {
+        executor: 'nx:run-commands',
+        options: {
+          commands: [chatCommand],
+          cwd: '{projectRoot}',
+          env: {
+            URL: chatUrl,
+          },
+        },
+        dependsOn: [`${agentTargetPrefix}-serve-local`],
       },
     },
   });

@@ -345,6 +345,21 @@ AG-UIエージェントは、フロントエンドから直接利用されるよ
 
 このコマンドは`uv run`を使用して[Bedrock AgentCore Python SDK](https://github.com/aws/bedrock-agentcore-sdk-python)でStrandsエージェントを実行します。
 
+### エージェントとのチャット
+
+ジェネレーターは、`<your-agent-name>-serve-local`に依存する`<your-agent-name>-chat` Nxターゲットを設定します。実行するとエージェントがローカルで起動し、インタラクティブなターミナルチャットに入ります：
+
+<NxCommands commands={['run your-project:agent-chat']} />
+
+**HTTP**エージェントの場合、ジェネレーターは以下も生成します：
+
+- `scripts/<your-agent-name>_openapi.py` — エージェントのOpenAPI仕様をエクスポートする小さなスクリプト
+- `<your-agent-name>-openapi` Nxターゲット（これを実行）
+- `<your-agent-name>-generate-client` Nxターゲット（`scripts/<your-agent-name>/generated/`に型安全なTypeScriptクライアントを生成）
+- `scripts/<your-agent-name>/chat.ts` — 生成されたクライアントの薄いラッパー
+
+エージェントの入力形状をカスタマイズする場合（例：`InvokeInput`に新しいフィールドを追加）、エージェント呼び出し時に新しいフィールドを渡すように`chat.ts`を更新すると、残りは自動的に機能します。
+
 <OptionFilter when={{ computeType: 'BedrockAgentCoreRuntime' }} description="Bedrock AgentCore Runtime deployment details">
 ## Bedrock AgentCore Runtimeへのデプロイ
 

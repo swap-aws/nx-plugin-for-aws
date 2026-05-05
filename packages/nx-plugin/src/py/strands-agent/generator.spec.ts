@@ -1212,4 +1212,132 @@ dev-dependencies = []
     expect(pyProjectToml).toContain('ag-ui-strands');
     expect(pyProjectToml).toContain('strands-agents');
   });
+
+  it('should generate HTTP chat CLI with OpenAPI client gen and wire up the chat target', async () => {
+    await pyStrandsAgentGenerator(tree, {
+      project: 'test-project',
+      computeType: 'None',
+      iacProvider: 'CDK',
+    });
+
+    // The HTTP chat CLI script uses the generated type-safe client
+    const chatScriptPath = 'apps/test-project/scripts/agent/chat.ts';
+    expect(tree.exists(chatScriptPath)).toBeTruthy();
+    const chatScript = tree.read(chatScriptPath, 'utf-8');
+    expect(chatScript).toContain("from 'agent-chat-cli'");
+    expect(chatScript).toContain('chatLoop');
+    expect(chatScript).toContain('./generated/client.gen');
+
+    // The OpenAPI spec generator script is emitted into the agent project
+    expect(
+      tree.exists('apps/test-project/scripts/agent_openapi.py'),
+    ).toBeTruthy();
+
+    // Chat target chains: generate-client -> openapi, and also waits for serve-local
+    const projectConfig = JSON.parse(
+      tree.read('apps/test-project/project.json', 'utf-8'),
+    );
+    expect(projectConfig.targets['agent-openapi']).toBeDefined();
+    expect(
+      projectConfig.targets['agent-openapi'].options.commands[0],
+    ).toContain('scripts/agent_openapi.py');
+
+    expect(projectConfig.targets['agent-generate-client']).toBeDefined();
+    expect(
+      projectConfig.targets['agent-generate-client'].options.commands[0],
+    ).toContain('@aws/nx-plugin:open-api#ts-client');
+    expect(projectConfig.targets['agent-generate-client'].dependsOn).toEqual([
+      'agent-openapi',
+    ]);
+
+    const chatTarget = projectConfig.targets['agent-chat'];
+    expect(chatTarget).toBeDefined();
+    expect(chatTarget.options.commands[0]).toBe('tsx ./scripts/agent/chat.ts');
+    expect(chatTarget.dependsOn).toEqual([
+      'agent-generate-client',
+      'agent-serve-local',
+    ]);
+
+    // Generated client dir should be gitignored
+    const gitignore = tree.read('apps/test-project/.gitignore', 'utf-8');
+    expect(gitignore).toContain('scripts/agent/generated/');
+
+    const rootPackageJson = JSON.parse(tree.read('package.json', 'utf-8'));
+    expect(rootPackageJson.devDependencies['tsx']).toBeDefined();
+    expect(rootPackageJson.devDependencies['agent-chat-cli']).toBeDefined();
+  });
+
+  it('should not vend a chat script for A2A — runs agent-chat-cli directly', async () => {
+    await pyStrandsAgentGenerator(tree, {
+      project: 'test-project',
+      protocol: 'A2A',
+      computeType: 'None',
+      iacProvider: 'CDK',
+    });
+
+    expect(tree.exists('apps/test-project/scripts/agent/chat.ts')).toBeFalsy();
+    // No openapi/generate-client targets for A2A
+    expect(
+      tree.exists('apps/test-project/scripts/agent_openapi.py'),
+    ).toBeFalsy();
+
+    const projectConfig = JSON.parse(
+      tree.read('apps/test-project/project.json', 'utf-8'),
+    );
+    expect(projectConfig.targets['agent-openapi']).toBeUndefined();
+    expect(projectConfig.targets['agent-generate-client']).toBeUndefined();
+
+    const chatTarget = projectConfig.targets['agent-chat'];
+    expect(chatTarget).toBeDefined();
+    expect(chatTarget.options.commands[0]).toMatch(
+      /^agent-chat-cli a2a http:\/\/localhost:\d+$/,
+    );
+    expect(chatTarget.dependsOn).toEqual(['agent-serve-local']);
+  });
+
+  it('should not vend a chat script for AG-UI — runs agent-chat-cli directly', async () => {
+    await pyStrandsAgentGenerator(tree, {
+      project: 'test-project',
+      protocol: 'AG-UI',
+      computeType: 'None',
+      iacProvider: 'CDK',
+    });
+
+    expect(tree.exists('apps/test-project/scripts/agent/chat.ts')).toBeFalsy();
+
+    const projectConfig = JSON.parse(
+      tree.read('apps/test-project/project.json', 'utf-8'),
+    );
+    const chatTarget = projectConfig.targets['agent-chat'];
+    expect(chatTarget).toBeDefined();
+    expect(chatTarget.options.commands[0]).toMatch(
+      /^agent-chat-cli agui http:\/\/localhost:\d+\/invocations$/,
+    );
+    expect(chatTarget.dependsOn).toEqual(['agent-serve-local']);
+  });
+
+  it('should generate HTTP chat targets with custom agent name', async () => {
+    await pyStrandsAgentGenerator(tree, {
+      project: 'test-project',
+      name: 'my-custom-agent',
+      computeType: 'None',
+      iacProvider: 'CDK',
+    });
+
+    expect(
+      tree.exists('apps/test-project/scripts/my-custom-agent/chat.ts'),
+    ).toBeTruthy();
+    expect(
+      tree.exists('apps/test-project/scripts/my_custom_agent_openapi.py'),
+    ).toBeTruthy();
+
+    const projectConfig = JSON.parse(
+      tree.read('apps/test-project/project.json', 'utf-8'),
+    );
+    expect(projectConfig.targets['my-custom-agent-chat']).toBeDefined();
+    expect(projectConfig.targets['my-custom-agent-chat'].dependsOn).toEqual([
+      'my-custom-agent-generate-client',
+      'my-custom-agent-serve-local',
+    ]);
+  });
 });
